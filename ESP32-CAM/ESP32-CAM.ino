@@ -89,6 +89,7 @@ void handle_not_found()
 
 void setup()
 {
+    pinMode(33, OUTPUT);
     Serial.begin(115200);
     while (!Serial);            //wait for serial connection. 
 
@@ -129,9 +130,14 @@ void setup()
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED)
     {
-        delay(500);
+        digitalWrite(33, LOW);
+        delay(1000);
+        Serial.print(F("."));
+        digitalWrite(33, HIGH);
+        delay (1000);
         Serial.print(F("."));
     }
+    digitalWrite(33, HIGH);
     Serial.println("");
     ip = WiFi.localIP();
     Serial.println("WiFi connected");
