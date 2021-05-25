@@ -137,7 +137,7 @@ void setup()
         delay (1000);
         Serial.print(F("."));
     }
-    digitalWrite(33, HIGH);
+    digitalWrite(33, LOW);
     Serial.println("");
     ip = WiFi.localIP();
     Serial.println("WiFi connected");
