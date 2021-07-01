@@ -1,8 +1,9 @@
 import RPi.GPIO as GPIO
 import threading
+import time
 
 class Motor:
-
+    
     def __init__(self, pwma_pin, pwmb_pin, ain1_pin, ain2_pin, bin1_pin, bin2_pin, stby_pin):
 
         GPIO.setmode(GPIO.BOARD)
@@ -41,17 +42,17 @@ class Motor:
             "BACKWARD_TURN_RIGHT": self.reverse_right,
             "NONE": self.off,
         }
-
         self.current_command = "NONE"
-
-    def get_current_command(self):
-        return self.current_command
-    
+        self.prev_command = ""
+        
     def set_current_command(self, command):
-        self.current_command = command
-
-    def control(self, command):
-        self.commands[command]()
+        self.current_command =  command
+        
+    def start_motors(self):
+        while True:
+            if self.current_command != self.prev_command:
+                self.prev_command = self.current_command
+                self.commands[self.current_command]()    
 
     # 0 is forward/backwards
     # 1 is left/right
@@ -91,11 +92,21 @@ class Motor:
         self.run_motor(0, 0, 0)
         self.run_motor(1, 0, 0)
         
+    def liniar_speedup(self, max_speed, command):
+        current_speed = 30
+        while current_speed < max_speed:
+            if command != self.current_command:
+                break
+            self.pwma.ChangeDutyCycle(current_speed)
+            current_speed += 1
+            time.sleep(0.125)
+        
     def run_motor(self, motor, speed, direction):
         GPIO.output(self.stby_pin, GPIO.HIGH);
         in1 = GPIO.HIGH
         in2 = GPIO.LOW
 
+        #change polarity
         if(direction == 1):
             in1 = GPIO.LOW
             in2 = GPIO.HIGH
@@ -103,6 +114,9 @@ class Motor:
         if(motor == 0):
             GPIO.output(self.ain1_pin, in1)
             GPIO.output(self.ain2_pin, in2)
+            t = threading.Thread(target=self.liniar_speedup, args=[speed, self.current_command])
+            t.start()
+            t.join()
             self.pwma.ChangeDutyCycle(speed)
         elif(motor == 1):
             GPIO.output(self.bin1_pin, in1)
